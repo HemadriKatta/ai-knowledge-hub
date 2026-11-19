@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: knowledge-hub-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: knowledge_user
+      POSTGRES_PASSWORD: knowledge_password
+      POSTGRES_DB: knowledge_hub
+    ports:
+      - "5433:5432"
+    volumes:
+      - knowledge_pgdata:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  knowledge_pgdata:
