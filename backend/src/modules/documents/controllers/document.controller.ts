@@ -10,6 +10,14 @@ import { pool } from "../../../config/database.js";
 import { env } from "../../../config/env.js";
 
 import { ingestDocument } from "../services/document.service.js";
+import { embedDocumentChunks } from "../services/embedding.service.js";
+
+import { searchDocuments } from "../services/search.service.js";
+
+const searchSchema = z.object({
+    question: z.string().trim().min(3).max(2000),
+    topK: z.coerce.number().int().min(1).max(20).default(5)
+});
 
 export async function uploadDocument(
     req: Request,
@@ -130,3 +138,57 @@ export async function getDocumentById(
         next(error);
     }
 }
+
+
+export async function generateDocumentEmbeddings(
+    req: Request,
+    res: Response,
+    next: NextFunction
+) {
+    try {
+        const documentId = req.params.id;
+        console.log("Document ID:", documentId);
+        if (typeof documentId !== "string" || !documentId.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid document ID"
+            });
+        }
+
+        const result = await embedDocumentChunks(
+            documentId,
+            env.DEV_USER_ID
+        );
+
+        return res.status(200).json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+export async function searchDocumentChunks(
+    req: Request,
+    res: Response,
+    next: NextFunction
+) {
+    try {
+        const input = searchSchema.parse(req.body);
+
+        const result = await searchDocuments(
+            input.question,
+            env.DEV_USER_ID,
+            input.topK
+        );
+
+        res.status(200).json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
