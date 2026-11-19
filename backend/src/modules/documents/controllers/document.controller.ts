@@ -147,7 +147,6 @@ export async function generateDocumentEmbeddings(
 ) {
     try {
         const documentId = req.params.id;
-        console.log("Document ID:", documentId);
         if (typeof documentId !== "string" || !documentId.trim()) {
             return res.status(400).json({
                 success: false,

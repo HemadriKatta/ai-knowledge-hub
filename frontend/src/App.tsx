@@ -3,6 +3,7 @@ import {
   askAI,
   checkBackend
 } from "./services/api";
+import Chat from "./components/chat";
 
 function App() {
   const [question, setQuestion] = useState("");
@@ -88,6 +89,7 @@ function App() {
           </div>
         )}
       </section>
+      <Chat />
     </main>
   );
 }

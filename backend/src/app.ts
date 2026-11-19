@@ -6,6 +6,7 @@ import healthRoutes from "./routes/health.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
 import { errorHandler } from "./middleware/error.middleware.js";
 import documentRoutes from "./modules/documents/routes/document.routes.js";
+import chatRoutes from "./modules/chat/routes/chat.routes.js";
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use(express.json({ limit: "1mb" }));
 app.use("/api/health", healthRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/documents", documentRoutes);
+app.use("/api/chat", chatRoutes);
 
 app.use((req, res) => {
     res.status(404).json({

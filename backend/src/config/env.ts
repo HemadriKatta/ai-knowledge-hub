@@ -17,6 +17,9 @@ const envSchema = z.object({
 
     DEV_USER_ID: z.uuid(),
 
+    OLLAMA_MODEL: z.string().default("llama3.2:1b"),
+    OLLAMA_BASE_URL: z.string().default("http://localhost:11434"),
+
     FRONTEND_URL: z.string().default(
         "http://localhost:5173"
     )

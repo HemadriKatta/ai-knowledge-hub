@@ -1,5 +1,11 @@
 import axios from "axios";
 
+export interface ChatRequest {
+    question: string;
+    conversationId?: string;
+}
+
+
 export const api = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL,
     headers: {
@@ -18,5 +24,10 @@ export async function askAI(question: string) {
         question
     });
 
+    return response.data;
+}
+
+export async function sendChatMessage(data: ChatRequest) {
+    const response = await api.post("/chat", data);
     return response.data;
 }
