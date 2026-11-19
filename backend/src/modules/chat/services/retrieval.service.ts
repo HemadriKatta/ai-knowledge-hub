@@ -12,13 +12,13 @@ export interface RetrievedChunk {
 }
 
 export async function retrieveRelevantChunks(
-    question: string,
+    searchQuery: string,
     userId: string,
     topK = 5
 ): Promise<RetrievedChunk[]> {
 
     // Step 1: Convert question into a vector using Transformers.js.
-    const embedding = await generateEmbedding(question);
+    const embedding = await generateEmbedding(searchQuery);
 
     const vector = `[${embedding.join(",")}]`;
 

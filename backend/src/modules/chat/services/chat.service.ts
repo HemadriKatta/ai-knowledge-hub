@@ -1,19 +1,17 @@
 
 import { pool } from "../../../config/database.js";
 import { generateRAGAnswer } from "./rag.service.js";
-
-interface ChatInput {
-    question: string;
-    userId: string;
-    conversationId?: string;
-}
+import {
+    ChatInput,
+    ChatHistoryMessage
+} from "../types/chat.types.js";
 
 export async function chatWithDocuments(input: ChatInput) {
-    const { question, userId, conversationId } = input;
+    const { question, userId } = input;
 
-    let activeConversationId = conversationId;
+    let activeConversationId = input.conversationId;
 
-    // Step 1: Create a conversation if one wasn't supplied.
+    // Step 1: Create or validate conversation.
     if (!activeConversationId) {
         const conversation = await pool.query(
             `INSERT INTO conversations (user_id, title)
@@ -24,7 +22,6 @@ export async function chatWithDocuments(input: ChatInput) {
 
         activeConversationId = conversation.rows[0].id;
     } else {
-        // Verify conversation ownership.
         const conversation = await pool.query(
             `SELECT id FROM conversations
              WHERE id = $1 AND user_id = $2`,
@@ -39,17 +36,42 @@ export async function chatWithDocuments(input: ChatInput) {
         }
     }
 
-    // Step 2: Save the user's question.
+    // Step 2: Fetch the last 10 messages BEFORE saving
+    // the current question.
+    const historyResult = await pool.query(
+        `SELECT role, content
+         FROM (
+             SELECT role, content, created_at
+             FROM messages
+             WHERE conversation_id = $1
+             ORDER BY created_at DESC
+             LIMIT 10
+         ) recent_messages
+         ORDER BY created_at ASC`,
+        [activeConversationId]
+    );
+
+    const history: ChatHistoryMessage[] =
+        historyResult.rows.map((message) => ({
+            role: message.role as "user" | "assistant",
+            content: message.content
+        }));
+
+    // Step 3: Save current user message.
     await pool.query(
         `INSERT INTO messages (conversation_id, role, content)
          VALUES ($1, 'user', $2)`,
         [activeConversationId, question]
     );
 
-    // Step 3: Execute the RAG pipeline.
-    const ragResult = await generateRAGAnswer(question, userId);
+    // Step 4: Execute context-aware RAG.
+    const ragResult = await generateRAGAnswer(
+        question,
+        userId,
+        history
+    );
 
-    // Step 4: Save the assistant's answer.
+    // Step 5: Save assistant response.
     const assistantMessage = await pool.query(
         `INSERT INTO messages (conversation_id, role, content)
          VALUES ($1, 'assistant', $2)
@@ -62,6 +84,7 @@ export async function chatWithDocuments(input: ChatInput) {
         messageId: assistantMessage.rows[0].id,
         question,
         answer: ragResult.answer,
+        searchQuery: ragResult.searchQuery,
         sources: ragResult.sources.map((source, index) => ({
             reference: `SOURCE ${index + 1}`,
             documentId: source.documentId,
