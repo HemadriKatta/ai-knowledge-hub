@@ -15,6 +15,8 @@ const envSchema = z.object({
         "gemini-embedding-001"
     ),
 
+    DEV_USER_ID: z.uuid(),
+
     FRONTEND_URL: z.string().default(
         "http://localhost:5173"
     )
